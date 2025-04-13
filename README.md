@@ -51,8 +51,8 @@ curl http://localhost:3001/health
 curl -X POST http://localhost:3001/api/v1/flights/search `
 -H "Content-Type: application/json" `
 -d '{\"origin\":\"DEL\",\"destination\":\"LHR\",\"departureDate\":\"2025-05-15\"}'
+```
 
-
-## Expected Output
-- Health check should return: `{"status":"UP"}`
+## Expected Output`
+- Health check should return: ```{"status":"UP"}```
 - Flight search should return test flights from the seed data
