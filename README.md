@@ -44,7 +44,8 @@ curl http://localhost:3001/health
 curl http://localhost:3002/health
 ```
 
-### 2. Search Flights
+
+### 2. Search for Available Flights
 ```bash
 curl -X POST http://localhost:3001/api/v1/flights/search \
 -H "Content-Type: application/json" \
@@ -55,15 +56,12 @@ curl -X POST http://localhost:3001/api/v1/flights/search \
 }'
 ```
 
-### 3. Create Booking
-
-#### Successful Booking
+### 3. Create a New Booking
 ```bash
-# Use the _id from flight search response
 curl -X POST http://localhost:3002/api/v1/bookings \
 -H "Content-Type: application/json" \
 -d '{
-  "flightId": "67fd0f278b498af37c0c7d3d",
+  "flightId": "YOUR_FLIGHT_ID",
   "passengers": [{
     "firstName": "John",
     "lastName": "Doe",
@@ -75,50 +73,77 @@ curl -X POST http://localhost:3002/api/v1/bookings \
 }'
 ```
 
-#### Failed Booking Scenarios
-
-1. **Invalid Flight ID**
+### 3. Process Payment
 ```bash
-curl -X POST http://localhost:3002/api/v1/bookings \
+curl -X POST http://localhost:3002/api/v1/bookings/YOUR_BOOKING_ID/payment \
 -H "Content-Type: application/json" \
 -d '{
-  "flightId": "invalid_id",
-  "passengers": [{
-    "firstName": "John",
-    "lastName": "Doe",
-    "email": "john@example.com",
-    "phone": "+1234567890"
-  }],
   "amount": 850,
-  "currency": "USD"
+  "currency": "USD",
+  "paymentMethod": "CARD"
 }'
 ```
 
-2. **Wrong Amount**
+### 4. Check Booking Status
 ```bash
-curl -X POST http://localhost:3002/api/v1/bookings \
--H "Content-Type: application/json" \
--d '{
-  "flightId": "67fd0f278b498af37c0c7d3d",
-  "passengers": [{
-    "firstName": "John",
-    "lastName": "Doe",
-    "email": "john@example.com",
-    "phone": "+1234567890"
-  }],
-  "amount": 100,
-  "currency": "USD"
-}'
+curl http://localhost:3002/api/v1/bookings/YOUR_BOOKING_ID
 ```
 
-## Expected Responses
+### 5. Cancel Booking
+```bash
+curl -X DELETE http://localhost:3002/api/v1/bookings/YOUR_BOOKING_ID
+```
 
-### Successful Booking
+## Response Examples
+
+### 1. Search Response
 ```json
 {
-  "bookingId": "...",
+  "outboundFlights": [{
+    "_id": "67fd0f278b498af37c0c7d3d",
+    "flightNumber": "AI101",
+    "airline": "Air India",
+    "departure": {
+      "airport": "DEL",
+      "time": "2025-05-15T08:00:00Z"
+    }
+  }]
+}
+```
+
+### 2. Booking Creation Response
+```json
+{
+  "message": "Booking created successfully",
+  "booking": {
+    "bookingId": "807f9071-96b2-451b-b4e4-dff8cacf5fd6",
+    "status": "PENDING",
+    "pnr": "2JIALF",
+    "passengers": [...],
+    "paymentDetails": {
+      "amount": 850,
+      "currency": "USD",
+      "status": "PENDING"
+    }
+  }
+}
+```
+
+### 3. Payment Response
+```json
+{
+  "message": "Payment processed successfully",
   "status": "CONFIRMED",
-  "pnr": "...",
+  "pnr": "2JIALF"
+}
+```
+
+### 4. Booking Status Response
+```json
+{
+  "bookingId": "807f9071-96b2-451b-b4e4-dff8cacf5fd6",
+  "status": "CONFIRMED",
+  "pnr": "2JIALF",
   "flight": {
     "flightNumber": "AI101",
     "departure": "DEL",
@@ -127,26 +152,13 @@ curl -X POST http://localhost:3002/api/v1/bookings \
 }
 ```
 
-### Failed Booking
+### 5. Cancellation Response
 ```json
 {
-  "message": "Flight not found or service unavailable"
+  "message": "Booking cancelled successfully",
+  "booking": {
+    "status": "CANCELLED",
+    "refundAmount": 850
+  }
 }
 ```
-
-## Troubleshooting
-
-### Common Issues
-1. **Services Not Starting**
-```powershell
-docker compose down
-docker compose up -d --build
-```
-
-2. **Database Connection Issues**
-- Check MongoDB logs: `docker logs intflightservice-mongodb-1`
-- Verify connection strings in .env files
-
-3. **Service Communication Issues**
-- Check service URLs in .env files
-- Verify network configuration in docker-compose.yaml
