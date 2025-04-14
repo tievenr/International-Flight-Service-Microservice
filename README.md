@@ -73,7 +73,7 @@ curl -X POST http://localhost:3002/api/v1/bookings \
 }'
 ```
 
-### 3. Process Payment
+### 4. Process Payment
 ```bash
 curl -X POST http://localhost:3002/api/v1/bookings/YOUR_BOOKING_ID/payment \
 -H "Content-Type: application/json" \
@@ -84,12 +84,12 @@ curl -X POST http://localhost:3002/api/v1/bookings/YOUR_BOOKING_ID/payment \
 }'
 ```
 
-### 4. Check Booking Status
+### 5. Check Booking Status
 ```bash
 curl http://localhost:3002/api/v1/bookings/YOUR_BOOKING_ID
 ```
 
-### 5. Cancel Booking
+### 6. Cancel Booking
 ```bash
 curl -X DELETE http://localhost:3002/api/v1/bookings/YOUR_BOOKING_ID
 ```
