@@ -9,8 +9,8 @@
 
 1. **Clone and Setup**
 ```powershell
-git clone git@github.com:YourUsername/IntFlightService.git
-cd IntFlightService
+git clone https://github.com/tievenr/International-Flight-Service-Microservice.git
+cd International-Flight-Service
 ```
 
 2. **Start Services**
