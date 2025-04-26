@@ -1,0 +1,163 @@
+version: '3.8'
+
+services:
+  # MongoDB for International Flight Service
+  mongodb_flight:
+    image: mongo:latest
+    container_name: mongodb_flight
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: secret123
+    volumes:
+      - mongo_data_flight:/data/db
+      - ./mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro
+    command: mongod --auth
+    networks:
+      - app_network
+
+  # MongoDB for User Service
+  mongodb_user:
+    image: mongo
+    container_name: mongodb_user
+    ports:
+      - "27018:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: secret123
+    volumes:
+      - mongo_data_user:/data/db
+      - ./mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro
+    command: mongod --auth
+    networks:
+      - app_network
+
+  # MongoDB for Visa Services
+  mongodb_visa:
+    image: mongo
+    container_name: mongodb_visa
+    ports:
+      - "27019:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: secret123
+    volumes:
+      - mongo_data_visa:/data/db
+      - ./mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro
+    command: mongod --auth
+    networks:
+      - app_network
+
+  # Redis for Booking Service
+  redis:
+    image: redis:alpine
+    container_name: redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - app_network
+
+  # API Gateway
+  api-gateway:
+    build: ./api-gateway
+    container_name: api-gateway
+    ports:
+      - "8000:8000"
+    depends_on:
+      - user_service
+      - flight-search-service
+      - booking-service
+      - visa-req
+    environment:
+      - USER_SERVICE_URL=http://user_service:8000
+      - VISA_REQ_URL=http://visa-req:3000
+      - FLIGHT_SEARCH_URL=http://flight-search-service:3001
+      - BOOKING_SERVICE_URL=http://booking-service:3002
+    networks:
+      - app_network
+
+  # User Service
+  user_service:
+    build: ./CC_Project/user_service
+    container_name: user_service
+    ports:
+      - "8001:8000"
+    depends_on:
+      - mongodb_user
+    environment:
+      - MONGO_URI=mongodb://admin:secret123@mongodb_user:27017/flight_booking?authSource=admin
+    networks:
+      - app_network
+
+  # Visa Requirements Service
+  visa-req:
+    build: 
+      context: ./visa-services/visa-req
+      dockerfile: Dockerfile
+    container_name: visa-req
+    ports:
+      - "3000:3000"
+    depends_on:
+      mongodb_visa:
+        condition: service_started
+    environment:
+      - MONGODB_URI=mongodb://admin:secret123@mongodb_visa:27017/visa-service?authSource=admin
+      - PORT=3000
+    networks:
+      - app_network
+
+  visa-admin:
+    build:
+      context: ./visa-services/visa-admin
+    container_name: visa-admin
+    ports:
+      - "4000:4000"
+    environment:
+      MONGO_URI: mongodb://admin:secret123@mongodb_visa:27017/visadb?authSource=admin
+    depends_on:
+      - mongodb_visa
+    networks:
+      - app_network
+
+  # Flight Search Service
+  flight-search-service:
+    build: ./International-Flight-Service-Microservice/flight-search-service
+    container_name: flight-search-service
+    ports:
+      - "3001:3001"
+    depends_on:
+      - mongodb_flight
+    environment:
+      - MONGODB_URI=mongodb://admin:secret123@mongodb_flight:27017/flight_service?authSource=admin
+      - PORT=3001
+    networks:
+      - app_network
+
+  # Booking Service
+  booking-service:
+    build: ./International-Flight-Service-Microservice/booking-service
+    container_name: booking-service
+    ports:
+      - "3002:3002"
+    depends_on:
+      - mongodb_flight
+      - redis
+    environment:
+      - MONGODB_URI=mongodb://admin:secret123@mongodb_flight:27017/flight_service?authSource=admin
+      - REDIS_URL=redis://redis:6379
+      - PORT=3002
+    networks:
+      - app_network
+
+volumes:
+  mongo_data_flight:
+  mongo_data_user:
+  mongo_data_visa:
+  redis_data:
+
+networks:
+  app_network:
+    driver: bridge 
