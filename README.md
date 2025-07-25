@@ -1,4 +1,4 @@
-# International Flight Service
+# FlyNet Microservices
 
 A microservice-based system for international flight bookings with integrated visa requirements.
 
